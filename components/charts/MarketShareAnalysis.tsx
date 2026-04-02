@@ -11,7 +11,7 @@ interface MarketShareAnalysisProps {
   year?: number
 }
 
-export function MarketShareAnalysis({ year: propYear = 2023 }: MarketShareAnalysisProps) {
+export function MarketShareAnalysis({ year: propYear = 2025 }: MarketShareAnalysisProps) {
   const { data, filters, updateFilters } = useDashboardStore()
   const [marketShareData, setMarketShareData] = useState<MarketShareData[]>([])
   const [allCompaniesData, setAllCompaniesData] = useState<MarketShareData[]>([])
@@ -32,7 +32,7 @@ export function MarketShareAnalysis({ year: propYear = 2023 }: MarketShareAnalys
       }
       return years
     }
-    return [2021, 2022, 2023, 2024, 2025, 2026, 2027, 2028, 2029]
+    return [2025, 2026, 2027, 2028, 2029, 2030, 2031, 2032, 2033]
   }, [data])
 
   // Filter data based on selected filters
