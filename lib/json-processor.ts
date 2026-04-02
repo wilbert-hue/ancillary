@@ -970,14 +970,17 @@ async function processSegmentTypeAsync(
       let geography = pathArray[0]
       const segmentPath = pathArray.slice(segmentTypeIndex + 1)
 
-      // SPECIAL HANDLING for "By Region" segment type:
+      // SPECIAL HANDLING for "By Region" segment type in global markets:
       // Use the most specific geography level from the segment path
       // Path structure: [Global, By Region, North America, U.S.]
       // segmentPath: [North America, U.S.]
       // For country-level: geography = "U.S." (deepest level)
       // For region-level (self-referencing like North America > North America): geography = "North America"
+      // NOTE: Only apply when top-level geography is "Global" — for country-specific markets
+      // (e.g., "U.S."), "By Region" is a segment dimension, not a geography dimension
       const isRegionSegmentType = segmentType === 'By Region' || segmentType === 'By State' || segmentType === 'By Country'
-      if (isRegionSegmentType && segmentPath.length > 0 && segmentPath[0]) {
+      const isGlobalGeo = geography === 'Global'
+      if (isRegionSegmentType && isGlobalGeo && segmentPath.length > 0 && segmentPath[0]) {
         const regionName = segmentPath[0]
         const entityName = segmentPath.length > 1 ? segmentPath[segmentPath.length - 1] : regionName
         // If the entity name equals the region name, it's a region aggregate
