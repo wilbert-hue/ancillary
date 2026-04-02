@@ -1,63 +1,33 @@
 {
-  "Global": {
-    "By Type": {
-      "Sub-Normothermic Perfusion (20–34°C)": {},
-      "Warm or Normothermic Perfusion (35–37°C)": {}
+  "U.S.": {
+    "By Service Category": {
+      "Packing and Unpacking Services": {},
+      "Home Staging and Interior Setup": {},
+      "Furniture Assembly and Disassembly": {},
+      "Junk Removal and Disposal": {},
+      "Cleaning and Sanitization (pre and post move)": {},
+      "Storage and Warehousing (temporary, long term, climate controlled)": {},
+      "Utility Setup and Change Management (internet, gas, electricity)": {},
+      "Address Change and Mail Redirection Services": {},
+      "Concierge and Relocation Coordination": {},
+      "Move Insurance and Valuation Services": {},
+      "Handyman and Minor Repair Services": {},
+      "Others (Waste Recycling and Donation Management, etc.)": {}
     },
-    "By Organ Type": {
-      "Liver": {},
-      "Heart": {},
-      "Lung": {},
-      "Kidney": {},
-      "Others (Pancreas, Small bowel / Intestine, Composite Tissues / Limb Perfusion (emerging use cases))": {}
-    },
-    "Application / Use Case": {
-      "Organ Preservation": {},
-      "Viability Assessment": {},
-      "Physiologic Transport": {},
-      "Reconditioning Marginal Organs": {},
-      "Others (Research Use / Protocol development)": {}
-    },
-    "By End User": {
-      "Hospitals & Clinics": {},
-      "Specialty Clinic/Centers": {},
-      "Transplant Centers": {},
-      "Others (Research Institutes/Centers, Organ Procurement Organizations, etc.)": {}
+    "By Customer Type": {
+      "Residential (Households, Condos, Apts)": {},
+      "Corporate & Commercial Offices": {},
+      "Government & Public Sector": {},
+      "Institutional (Schools, Labs, Museums)": {},
+      "Real Estate Developers": {},
+      "Others (Retail, Hospitality, etc.)": {}
     },
     "By Region": {
-      "North America": {
-        "U.S.": {},
-        "Canada": {}
-      },
-      "Europe": {
-        "U.K.": {},
-        "Germany": {},
-        "Italy": {},
-        "France": {},
-        "Spain": {},
-        "Russia": {},
-        "Rest of Europe": {}
-      },
-      "Asia Pacific": {
-        "China": {},
-        "India": {},
-        "Japan": {},
-        "South Korea": {},
-        "ASEAN": {},
-        "Australia": {},
-        "Rest of Asia Pacific": {}
-      },
-      "Latin America": {
-        "Brazil": {},
-        "Argentina": {},
-        "Mexico": {},
-        "Rest of Latin America": {}
-      },
-      "Middle East & Africa": {
-        "GCC": {},
-        "South Africa": {},
-        "Rest of Middle East & Africa": {}
-      }
+      "Northeast": {},
+      "Southeast": {},
+      "Midwest": {},
+      "West": {},
+      "Southwest": {}
     }
   }
 }

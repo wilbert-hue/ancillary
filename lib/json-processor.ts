@@ -1233,9 +1233,9 @@ export async function processJsonDataAsync(
     }
     const startYear = Math.min(...allYears)
     const forecastYear = Math.max(...allYears)
-    const baseYear = startYear + 5 // Base year = 2026 for 2021-2033 data
+    const baseYear = startYear // Base year = first year of data
     // Historical/Forecast split: years before base year are historical
-    const historicalEndYear = baseYear - 1 // 2025
+    const historicalEndYear = baseYear - 1
     console.log(`Years: ${startYear} to ${forecastYear}, base: ${baseYear}, historical end: ${historicalEndYear}`)
     
     // Extract geographies from segmentation data (first level keys)
@@ -1268,52 +1268,58 @@ export async function processJsonDataAsync(
 
     // Extract regions AND countries from "By Region" segment type as additional geographies
     // This builds a full geography hierarchy: Global > Regions > Countries
+    // Only do this for global markets - for country-specific markets (e.g., "U.S."),
+    // "By Region" is a segment dimension, not a geography dimension
     const regionGeographies: string[] = []
     const regionToCountries: Record<string, string[]> = {}
     const allCountries: string[] = []
-    for (const topGeo of geographies) {
-      const geoData = structureData[topGeo]
-      if (geoData && typeof geoData === 'object') {
-        // Look for "By Region" segment type
-        const byRegionData = geoData['By Region']
-        if (byRegionData && typeof byRegionData === 'object') {
-          // Extract region names (first level keys under "By Region")
-          const regions = Object.keys(byRegionData).filter(key => {
-            const value = byRegionData[key]
-            return value && typeof value === 'object' && !Array.isArray(value)
-          })
-          regions.forEach(region => {
-            if (!regionGeographies.includes(region) && !geographies.includes(region)) {
-              regionGeographies.push(region)
-            }
-            // Extract countries under each region (second level keys, excluding the region name itself)
-            const regionData = byRegionData[region]
-            if (regionData && typeof regionData === 'object') {
-              const countries = Object.keys(regionData).filter(key => {
-                return key !== region && typeof regionData[key] === 'object' && !Array.isArray(regionData[key])
-              })
-              if (countries.length > 0) {
-                regionToCountries[region] = countries
-                countries.forEach(country => {
-                  if (!allCountries.includes(country)) {
-                    allCountries.push(country)
-                  }
-                })
+    const isGlobalMarket = geographies.includes('Global')
+
+    if (isGlobalMarket) {
+      for (const topGeo of geographies) {
+        const geoData = structureData[topGeo]
+        if (geoData && typeof geoData === 'object') {
+          // Look for "By Region" segment type
+          const byRegionData = geoData['By Region']
+          if (byRegionData && typeof byRegionData === 'object') {
+            // Extract region names (first level keys under "By Region")
+            const regions = Object.keys(byRegionData).filter(key => {
+              const value = byRegionData[key]
+              return value && typeof value === 'object' && !Array.isArray(value)
+            })
+            regions.forEach(region => {
+              if (!regionGeographies.includes(region) && !geographies.includes(region)) {
+                regionGeographies.push(region)
               }
-            }
-          })
+              // Extract countries under each region (second level keys, excluding the region name itself)
+              const regionData = byRegionData[region]
+              if (regionData && typeof regionData === 'object') {
+                const countries = Object.keys(regionData).filter(key => {
+                  return key !== region && typeof regionData[key] === 'object' && !Array.isArray(regionData[key])
+                })
+                if (countries.length > 0) {
+                  regionToCountries[region] = countries
+                  countries.forEach(country => {
+                    if (!allCountries.includes(country)) {
+                      allCountries.push(country)
+                    }
+                  })
+                }
+              }
+            })
+          }
         }
       }
-    }
 
-    // Add regions and countries to geographies list
-    if (regionGeographies.length > 0) {
-      console.log(`Found ${regionGeographies.length} regions from "By Region":`, regionGeographies)
-      geographies = [...geographies, ...regionGeographies]
-    }
-    if (allCountries.length > 0) {
-      console.log(`Found ${allCountries.length} countries from "By Region":`, allCountries)
-      geographies = [...geographies, ...allCountries]
+      // Add regions and countries to geographies list
+      if (regionGeographies.length > 0) {
+        console.log(`Found ${regionGeographies.length} regions from "By Region":`, regionGeographies)
+        geographies = [...geographies, ...regionGeographies]
+      }
+      if (allCountries.length > 0) {
+        console.log(`Found ${allCountries.length} countries from "By Region":`, allCountries)
+        geographies = [...geographies, ...allCountries]
+      }
     }
 
     console.log(`Found ${geographies.length} total geographies:`, geographies)
@@ -1335,9 +1341,12 @@ export async function processJsonDataAsync(
     console.log(`Found ${segmentTypes.size} segment types:`, Array.from(segmentTypes))
 
     // Remove "By Region" (and similar) from segment types - these are geography dimensions, not segments
-    segmentTypes.delete('By Region')
-    segmentTypes.delete('By State')
-    segmentTypes.delete('By Country')
+    // Only for global markets where "By Region" represents geographic breakdowns
+    if (isGlobalMarket) {
+      segmentTypes.delete('By Region')
+      segmentTypes.delete('By State')
+      segmentTypes.delete('By Country')
+    }
     console.log(`Segment types after removing geography types:`, Array.from(segmentTypes))
 
     // Filter out geographies that only exist in segmentation structure but have no actual data
@@ -1395,27 +1404,29 @@ export async function processJsonDataAsync(
       await new Promise(resolve => setImmediate(resolve))
     }
 
-    // Process "By Region" data separately for geography-based records
+    // Process "By Region" data separately for geography-based records (global markets only)
     // These records are NOT added to segment types but provide data for region/country geographies
-    const geoSegmentTypes = ['By Region', 'By State', 'By Country']
-    for (const geoSegType of geoSegmentTypes) {
-      // Check if this geo segment type exists in the structure data
-      const hasGeoSegType = Object.values(structureData).some(
-        (geo: any) => geo && typeof geo === 'object' && geo[geoSegType]
-      )
-      if (hasGeoSegType) {
-        console.log(`Processing geography segment type: ${geoSegType} (for geography records only)`)
-        const { records: geoRecords } = await processSegmentTypeAsync(
-          structureData,
-          valueData,
-          volumeData,
-          geoSegType,
-          geographies,
-          allYears,
-          segmentTypeIndex
+    if (isGlobalMarket) {
+      const geoSegmentTypes = ['By Region', 'By State', 'By Country']
+      for (const geoSegType of geoSegmentTypes) {
+        // Check if this geo segment type exists in the structure data
+        const hasGeoSegType = Object.values(structureData).some(
+          (geo: any) => geo && typeof geo === 'object' && geo[geoSegType]
         )
-        valueRecords.push(...geoRecords)
-        await new Promise(resolve => setImmediate(resolve))
+        if (hasGeoSegType) {
+          console.log(`Processing geography segment type: ${geoSegType} (for geography records only)`)
+          const { records: geoRecords } = await processSegmentTypeAsync(
+            structureData,
+            valueData,
+            volumeData,
+            geoSegType,
+            geographies,
+            allYears,
+            segmentTypeIndex
+          )
+          valueRecords.push(...geoRecords)
+          await new Promise(resolve => setImmediate(resolve))
+        }
       }
     }
     
@@ -1434,23 +1445,26 @@ export async function processJsonDataAsync(
         )
         volumeRecords.push(...volumeRecs)
       }
-      // Also process "By Region" geography records for volume
-      for (const geoSegType of geoSegmentTypes) {
-        const hasGeoSegType = Object.values(structureData).some(
-          (geo: any) => geo && typeof geo === 'object' && geo[geoSegType]
-        )
-        if (hasGeoSegType) {
-          console.log(`Processing volume geography segment type: ${geoSegType}`)
-          const { records: volumeGeoRecs } = await processSegmentTypeAsync(
-            structureData,
-            volumeData,
-            null,
-            geoSegType,
-            geographies,
-            allYears,
-            segmentTypeIndex
+      // Also process "By Region" geography records for volume (global markets only)
+      if (isGlobalMarket) {
+        const geoSegmentTypes = ['By Region', 'By State', 'By Country']
+        for (const geoSegType of geoSegmentTypes) {
+          const hasGeoSegType = Object.values(structureData).some(
+            (geo: any) => geo && typeof geo === 'object' && geo[geoSegType]
           )
-          volumeRecords.push(...volumeGeoRecs)
+          if (hasGeoSegType) {
+            console.log(`Processing volume geography segment type: ${geoSegType}`)
+            const { records: volumeGeoRecs } = await processSegmentTypeAsync(
+              structureData,
+              volumeData,
+              null,
+              geoSegType,
+              geographies,
+              allYears,
+              segmentTypeIndex
+            )
+            volumeRecords.push(...volumeGeoRecs)
+          }
         }
       }
     }
@@ -1472,9 +1486,9 @@ export async function processJsonDataAsync(
     
     // Build metadata
     const metadata: Metadata = {
-      market_name: 'Normothermic Machine Perfusion Market',
+      market_name: 'Ancillary Services Adjacent Moving Market',
       market_type: 'Market Analysis',
-      industry: 'Healthcare & Pharmaceuticals',
+      industry: 'Moving & Relocation Services',
       years: allYears,
       start_year: startYear,
       base_year: baseYear,
@@ -1483,7 +1497,7 @@ export async function processJsonDataAsync(
       forecast_years: allYears.filter(y => y > historicalEndYear),
       currency: 'USD',
       value_unit: 'Million',
-      volume_unit: 'Million Units',
+      volume_unit: 'Thousand Moves',
       has_value: valueRecords.length > 0,
       has_volume: volumeRecords.length > 0,
     }
